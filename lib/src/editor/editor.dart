@@ -219,6 +219,7 @@ class ExtendedImageEditorState extends State<ExtendedImageEditor> {
   }
 
   void _handleScaleStart(ScaleStartDetails details) {
+    print('---- _handleScaleStart');
     _layerKey.currentState!.pointerDown(true);
     _startingOffset = details.focalPoint;
     _editActionDetails!.screenFocalPoint = details.focalPoint;
@@ -227,6 +228,8 @@ class ExtendedImageEditorState extends State<ExtendedImageEditor> {
   }
 
   void _handleScaleUpdate(ScaleUpdateDetails details) {
+    print('---- _handleScaleUpdate');
+
     _layerKey.currentState!.pointerDown(true);
     if (_layerKey.currentState!.isAnimating ||
         _layerKey.currentState!.isMoving) {
@@ -251,7 +254,6 @@ class ExtendedImageEditorState extends State<ExtendedImageEditor> {
       _startingScale = _editActionDetails!.totalScale / details.scale;
       return;
     }
-
     totalScale = min(totalScale, _editorConfig!.maxScale);
 
     if (mounted && (scaleDelta != 1.0 || delta != Offset.zero)) {

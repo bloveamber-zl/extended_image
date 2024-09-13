@@ -270,10 +270,16 @@ class ExtendedImageCropLayerState extends State<ExtendedImageCropLayer>
       setState(() {
         _pointerDown = down;
       });
+      if (!down) {
+        _startTimer();
+      } else {
+        _timer?.cancel();
+      }
     }
   }
 
   void moveUpdate(_MoveType moveType, Offset delta) {
+    print('---- moveUpdate');
     if (isAnimating) {
       return;
     }
@@ -359,6 +365,7 @@ class ExtendedImageCropLayerState extends State<ExtendedImageCropLayer>
   /// handle crop rect with aspectRatio
   Rect _handleAspectRatio(double gWidth, _MoveType moveType, Rect result,
       Rect? layerDestinationRect, Offset delta) {
+    print('_handleAspectRatio:');
     final double? aspectRatio = widget.editActionDetails.cropAspectRatio;
     // do with aspect ratio
     if (aspectRatio != null) {
@@ -476,7 +483,7 @@ class ExtendedImageCropLayerState extends State<ExtendedImageCropLayer>
     if (_currentMoveType != null && moveType == _currentMoveType) {
       _currentMoveType = null;
       //if (widget.editorConfig.autoCenter)
-      _startTimer();
+      // _startTimer();
     }
   }
 
