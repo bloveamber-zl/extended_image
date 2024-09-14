@@ -1,11 +1,11 @@
 import 'dart:math';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:extended_image/src/image/raw_image.dart';
 import 'package:extended_image/src/utils.dart';
 import 'package:extended_image_library/extended_image_library.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import '../extended_image.dart';
 import 'crop_layer.dart';
@@ -27,12 +27,17 @@ class ExtendedImageEditor extends StatefulWidget {
   ExtendedImageEditorState createState() => ExtendedImageEditorState();
 }
 
-class ExtendedImageEditorState extends State<ExtendedImageEditor> {
+class ExtendedImageEditorState extends State<ExtendedImageEditor>
+    with TickerProviderStateMixin {
   EditActionDetails? _editActionDetails;
   EditorConfig? _editorConfig;
   late double _startingScale;
   late Offset _startingOffset;
   double _detailsScale = 1.0;
+  double? diffTop;
+  late AnimationController _offsetController;
+  late Animation<Rect?> _offsetAnimation;
+
   final GlobalKey<ExtendedImageCropLayerState> _layerKey =
       GlobalKey<ExtendedImageCropLayerState>();
   @override
@@ -70,6 +75,11 @@ class ExtendedImageEditorState extends State<ExtendedImageEditor> {
       _editActionDetails!.cropAspectRatio =
           _editActionDetails!.originalAspectRatio;
     }
+
+    _offsetController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
   }
 
   @override
@@ -173,12 +183,23 @@ class ExtendedImageEditorState extends State<ExtendedImageEditor> {
             ),
           ],
         ));
+
     result = Listener(
       child: result,
       onPointerDown: (_) {
+        setState(() {
+          // diffTop = diffTop ??
+          //     _editActionDetails!.screenDestinationRect!.top -
+          //         _editActionDetails!.cropRect!.top;
+          diffTop = 0;
+        });
+        if (_offsetController.isAnimating) {
+          _offsetController.stop();
+        }
         _layerKey.currentState?.pointerDown(true);
       },
       onPointerUp: (_) {
+        checkOffsetAnimation();
         _layerKey.currentState?.pointerDown(false);
       },
       onPointerSignal: _handlePointerSignal,
@@ -188,6 +209,96 @@ class ExtendedImageEditorState extends State<ExtendedImageEditor> {
       behavior: _editorConfig!.hitTestBehavior,
     );
     return result;
+  }
+
+  void checkOffsetAnimation() {
+    if (_offsetController.isAnimating) {
+      _offsetController.stop();
+    }
+    bool startAnimation = false;
+    final ui.Rect? imageRect = _editActionDetails!.screenDestinationRect;
+    final ui.Rect? cropRect = _editActionDetails!.cropRect;
+    final Rect oldImageRect = Rect.fromLTWH(
+        imageRect!.left, imageRect.top, imageRect.width, imageRect.height);
+    Rect newImageRect = Rect.fromLTWH(cropRect!.left, cropRect.top + diffTop!,
+        oldImageRect.width, oldImageRect.height);
+
+    double afterLeft = oldImageRect.left;
+    double afterTop = oldImageRect.top;
+
+    if (imageRect.left > cropRect.left) {
+      startAnimation = true;
+      afterLeft = cropRect.left;
+    }
+    if (imageRect.right < cropRect.right) {
+      startAnimation = true;
+      afterLeft = imageRect.left + (cropRect.right - imageRect.right);
+    }
+
+    if (imageRect.top > cropRect.top + diffTop!) {
+      startAnimation = true;
+      afterTop = cropRect.top + diffTop!;
+    }
+
+    if (imageRect.bottom < cropRect.bottom + diffTop!) {
+      startAnimation = true;
+      afterTop =
+          imageRect.top + (cropRect.bottom + diffTop! - imageRect.bottom);
+    }
+
+    final double oldWidth = imageRect.width;
+    final double oldHeight = imageRect.height;
+    double newWidth = imageRect.width;
+    double newHeight = imageRect.height;
+    final double cropWidth = cropRect.width;
+    final double cropHeight = cropRect.height;
+
+    if (oldWidth < cropWidth || oldHeight < cropHeight) {
+      startAnimation = true;
+      if (oldWidth < cropWidth && oldHeight >= cropHeight) {
+        newWidth = cropWidth;
+        newHeight = newWidth / (oldWidth / oldHeight);
+        afterLeft = cropRect.left;
+      } else if (oldHeight < cropHeight && oldWidth >= cropWidth) {
+        newHeight = cropHeight;
+        newWidth = newHeight * (oldWidth / oldHeight);
+        afterTop = cropRect.top + diffTop!;
+      } else {
+        final double widthRatio = oldWidth / cropWidth;
+        final double heightRatio = oldHeight / cropHeight;
+        if (widthRatio < heightRatio) {
+          newWidth = cropWidth;
+          newHeight = newWidth / (oldWidth / oldHeight);
+        } else {
+          newHeight = cropHeight;
+          newWidth = newHeight * (oldWidth / oldHeight);
+        }
+        afterLeft = cropRect.left;
+        afterTop = cropRect.top + diffTop!;
+      }
+    }
+
+    newImageRect = Rect.fromLTWH(afterLeft, afterTop, newWidth, newHeight);
+    if (startAnimation) {
+      _offsetController = AnimationController(
+        duration: const Duration(milliseconds: 400),
+        vsync: this,
+      );
+
+      final CurvedAnimation curvedAnimation = CurvedAnimation(
+        parent: _offsetController,
+        curve: Curves.easeOutQuad, // 设置动画曲线
+      );
+
+      _offsetAnimation = RectTween(begin: oldImageRect, end: newImageRect)
+          .animate(curvedAnimation);
+      _offsetController.addListener(() {
+        setState(() {
+          _editActionDetails!.setScreenDestinationRect(_offsetAnimation.value!);
+        });
+      });
+      _offsetController.forward();
+    }
   }
 
   Rect _initCropRect(Rect rect) {
@@ -229,7 +340,6 @@ class ExtendedImageEditorState extends State<ExtendedImageEditor> {
 
   void _handleScaleUpdate(ScaleUpdateDetails details) {
     print('---- _handleScaleUpdate');
-
     _layerKey.currentState!.pointerDown(true);
     if (_layerKey.currentState!.isAnimating ||
         _layerKey.currentState!.isMoving) {
@@ -245,6 +355,7 @@ class ExtendedImageEditorState extends State<ExtendedImageEditor> {
     _detailsScale = details.scale;
 
     _startingOffset = details.focalPoint;
+
     //no more zoom
     if ((_editActionDetails!.reachCropRectEdge && zoomOut) ||
         _editActionDetails!.totalScale.equalTo(_editorConfig!.maxScale) &&
@@ -255,7 +366,6 @@ class ExtendedImageEditorState extends State<ExtendedImageEditor> {
       return;
     }
     totalScale = min(totalScale, _editorConfig!.maxScale);
-
     if (mounted && (scaleDelta != 1.0 || delta != Offset.zero)) {
       setState(() {
         _editActionDetails!.totalScale = totalScale;

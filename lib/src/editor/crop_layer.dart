@@ -345,12 +345,13 @@ class ExtendedImageCropLayerState extends State<ExtendedImageCropLayer>
     ///move and scale image rect when crop rect is bigger than layout rect
 
     if (result.beyond(layoutRect)) {
-      cropRect = result;
-      final Rect centerCropRect = getDestinationRect(
-          rect: layoutRect, inputSize: result.size, fit: widget.fit);
-      final Rect newScreenCropRect =
-          centerCropRect.shift(widget.editActionDetails.layoutTopLeft!);
-      _doCropAutoCenterAnimation(newScreenCropRect: newScreenCropRect);
+      // 需要回弹动画所以注释
+      // cropRect = result;
+      // final Rect centerCropRect = getDestinationRect(
+      //     rect: layoutRect, inputSize: result.size, fit: widget.fit);
+      // final Rect newScreenCropRect =
+      //     centerCropRect.shift(widget.editActionDetails.layoutTopLeft!);
+      // _doCropAutoCenterAnimation(newScreenCropRect: newScreenCropRect);
     } else {
       result = _doWithMaxScale(result);
 

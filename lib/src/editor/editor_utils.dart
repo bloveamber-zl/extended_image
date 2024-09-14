@@ -246,69 +246,71 @@ class EditActionDetails {
 
       /// move
       else {
-        if (_screenDestinationRect != screenCropRect) {
-          final bool topSame =
-              _screenDestinationRect!.topIsSame(screenCropRect!);
-          final bool leftSame =
-              _screenDestinationRect!.leftIsSame(screenCropRect!);
-          final bool bottomSame =
-              _screenDestinationRect!.bottomIsSame(screenCropRect!);
-          final bool rightSame =
-              _screenDestinationRect!.rightIsSame(screenCropRect!);
+        // 需要回弹动画所以注释
+        // if (_screenDestinationRect != screenCropRect) {
+        //   final bool topSame =
+        //       _screenDestinationRect!.topIsSame(screenCropRect!);
+        //   final bool leftSame =
+        //       _screenDestinationRect!.leftIsSame(screenCropRect!);
+        //   final bool bottomSame =
+        //       _screenDestinationRect!.bottomIsSame(screenCropRect!);
+        //   final bool rightSame =
+        //       _screenDestinationRect!.rightIsSame(screenCropRect!);
 
-          if (topSame && bottomSame) {
-            delta = Offset(delta.dx, 0.0);
-          } else if (leftSame && rightSame) {
-            delta = Offset(0.0, delta.dy);
-          }
+        //   if (topSame && bottomSame) {
+        //     delta = Offset(delta.dx, 0.0);
+        //   } else if (leftSame && rightSame) {
+        //     delta = Offset(0.0, delta.dy);
+        //   }
+        //   _screenDestinationRect = _screenDestinationRect!.shift(delta);
+        // }
 
-          _screenDestinationRect = _screenDestinationRect!.shift(delta);
-        }
+        _screenDestinationRect = _screenDestinationRect!.shift(delta);
         //we have shift offset, we should clear delta.
         delta = Offset.zero;
       }
 
       _screenDestinationRect =
           computeBoundary(_screenDestinationRect!, screenCropRect!);
-
+      // 需要回弹动画所以注释
       // make sure that crop rect is all in image rect.
-      if (screenCropRect != null) {
-        Rect rect = screenCropRect!.expandToInclude(_screenDestinationRect!);
-        if (rect != _screenDestinationRect) {
-          final bool topSame = rect.topIsSame(screenCropRect!);
-          final bool leftSame = rect.leftIsSame(screenCropRect!);
-          final bool bottomSame = rect.bottomIsSame(screenCropRect!);
-          final bool rightSame = rect.rightIsSame(screenCropRect!);
+      // if (screenCropRect != null) {
+      //   Rect rect = screenCropRect!.expandToInclude(_screenDestinationRect!);
+      //   if (rect != _screenDestinationRect) {
+      //     final bool topSame = rect.topIsSame(screenCropRect!);
+      //     final bool leftSame = rect.leftIsSame(screenCropRect!);
+      //     final bool bottomSame = rect.bottomIsSame(screenCropRect!);
+      //     final bool rightSame = rect.rightIsSame(screenCropRect!);
 
-          // make sure that image rect keep same aspect ratio
-          if (topSame && bottomSame) {
-            rect = Rect.fromCenter(
-                center: rect.center,
-                width: rect.height /
-                    _screenDestinationRect!.height *
-                    _screenDestinationRect!.width,
-                height: rect.height);
-            _reachCropRectEdge = true;
-          } else if (leftSame && rightSame) {
-            rect = Rect.fromCenter(
-              center: rect.center,
-              width: rect.width,
-              height: rect.width /
-                  _screenDestinationRect!.width *
-                  _screenDestinationRect!.height,
-            );
-            _reachCropRectEdge = true;
-          }
-          totalScale =
-              totalScale / (rect.width / _screenDestinationRect!.width);
-          // init totalScale
-          if (_rawDestinationRect!.isSame(_rawDestinationRect!)) {
-            totalScale = 1.0;
-          }
-          preTotalScale = totalScale;
-          _screenDestinationRect = rect;
-        }
-      }
+      //     // make sure that image rect keep same aspect ratio
+      //     if (topSame && bottomSame) {
+      //       rect = Rect.fromCenter(
+      //           center: rect.center,
+      //           width: rect.height /
+      //               _screenDestinationRect!.height *
+      //               _screenDestinationRect!.width,
+      //           height: rect.height);
+      //       _reachCropRectEdge = true;
+      //     } else if (leftSame && rightSame) {
+      //       rect = Rect.fromCenter(
+      //         center: rect.center,
+      //         width: rect.width,
+      //         height: rect.width /
+      //             _screenDestinationRect!.width *
+      //             _screenDestinationRect!.height,
+      //       );
+      //       _reachCropRectEdge = true;
+      //     }
+      //     totalScale =
+      //         totalScale / (rect.width / _screenDestinationRect!.width);
+      //     // init totalScale
+      //     if (_rawDestinationRect!.isSame(_rawDestinationRect!)) {
+      //       totalScale = 1.0;
+      //     }
+      //     preTotalScale = totalScale;
+      //     _screenDestinationRect = rect;
+      //   }
+      // }
     } else {
       _screenDestinationRect = getRectWithScale(_rawDestinationRect!);
       _screenDestinationRect =
@@ -326,33 +328,34 @@ class EditActionDetails {
   }
 
   Rect computeBoundary(Rect result, Rect layoutRect) {
-    if (_computeHorizontalBoundary) {
-      //move right
-      if (result.left.greaterThanOrEqualTo(layoutRect.left)) {
-        result = Rect.fromLTWH(
-            layoutRect.left, result.top, result.width, result.height);
-      }
+    // 需要回弹动画所以注释
+    // if (_computeHorizontalBoundary) {
+    //   //move right
+    //   if (result.left.greaterThanOrEqualTo(layoutRect.left)) {
+    //     result = Rect.fromLTWH(
+    //         layoutRect.left, result.top, result.width, result.height);
+    //   }
 
-      ///move left
-      if (result.right.lessThanOrEqualTo(layoutRect.right)) {
-        result = Rect.fromLTWH(layoutRect.right - result.width, result.top,
-            result.width, result.height);
-      }
-    }
+    //   ///move left
+    //   if (result.right.lessThanOrEqualTo(layoutRect.right)) {
+    //     result = Rect.fromLTWH(layoutRect.right - result.width, result.top,
+    //         result.width, result.height);
+    //   }
+    // }
 
-    if (_computeVerticalBoundary) {
-      //move down
-      if (result.bottom.lessThanOrEqualTo(layoutRect.bottom)) {
-        result = Rect.fromLTWH(result.left, layoutRect.bottom - result.height,
-            result.width, result.height);
-      }
+    // if (_computeVerticalBoundary) {
+    //   //move down
+    //   if (result.bottom.lessThanOrEqualTo(layoutRect.bottom)) {
+    //     result = Rect.fromLTWH(result.left, layoutRect.bottom - result.height,
+    //         result.width, result.height);
+    //   }
 
-      //move up
-      if (result.top.greaterThanOrEqualTo(layoutRect.top)) {
-        result = Rect.fromLTWH(
-            result.left, layoutRect.top, result.width, result.height);
-      }
-    }
+    //   //move up
+    //   if (result.top.greaterThanOrEqualTo(layoutRect.top)) {
+    //     result = Rect.fromLTWH(
+    //         result.left, layoutRect.top, result.width, result.height);
+    //   }
+    // }
 
     _computeHorizontalBoundary =
         result.left.lessThanOrEqualTo(layoutRect.left) &&
